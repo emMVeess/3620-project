@@ -1,3 +1,8 @@
+# Global dictionaries for printing
+device_map = {}
+device_info = {}
+device_id = 1
+
 import sys
 
 # ruff: noqa: E402
@@ -8,7 +13,6 @@ from micropython import const
 import asyncio
 import aioble
 import bluetooth
-
 import random
 import struct
 
@@ -35,13 +39,63 @@ temp_characteristic = aioble.Characteristic(
 )
 aioble.register_services(temp_service)
 
+'''
+Prints devicelabel#, MAC Address, latest RSSI, and times seen
+'''
+def print_device_list():
+    print("\n" + "-" * 50)
+
+    #Sort by Device #
+    sorted_items = sorted(
+        device_map.items(),
+        key=lambda item: int(item[1].split(" ")[1])
+    )
+
+    for mac_full, label in sorted_items:
+        # Extract just the MAC ad from "Device(ADDR_RANDOM, xx:xx:xx:xx:xx:xx)"
+        mac_clean = mac_full.split(", ")[1][:-1] if ", " in mac_full else mac_full
+
+        rssi = device_info[mac_full]['rssi']
+        count = device_info[mac_full]['seen']
+        print(f"{label} | MAC: {mac_clean} | RSSI: {rssi} | Seen: {count}x")
+
+    print("-" * 50 + "\n")
+
 # This would be periodically polling a hardware sensor.
+'''
+sensor_task now tracks all devices by MAC address, assings each device a #,
+keeps counter of how many times a device is seen, Updates RSSI per detection
+calls def print_device_list to print
+'''
 async def sensor_task():
+    global device_map, device_info, device_id
+
+    while True:
+        async with aioble.scan(duration_ms=500) as scanner:
+            async for result in scanner:
+                mac = str(result.device)
+
+                if mac not in device_map:
+                    device_map[mac] = f"Device {device_id}"
+                    device_info[mac] = {
+                        'rssi': result.rssi,
+                        'seen': 1
+                    }
+                    device_id += 1
+                else:
+                    device_info[mac]['seen'] += 1
+                    device_info[mac]['rssi'] = result.rssi
+
+                print_device_list()
+                
+    #Old version of def sensor_task-to be deleted
+    '''
     while True:
         async with aioble.scan(duration_ms=500) as scanner:
             async for result in scanner:
                 #temp_characteristic.write((str(result.name()) + "," + str(result.device) + "," + str(result.rssi)).encode('utf-8'), send_update = True)
                 print((str(result.name()) + "," + str(result.device) + "," + str(result.rssi)).encode('utf-8'))
+    '''
 
 # Serially wait for connections. Don't advertise while a central is
 # connected.
