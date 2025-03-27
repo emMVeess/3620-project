@@ -18,9 +18,9 @@ import struct
 #
 
 # org.bluetooth.service.GATT
-_ENV_SENSE_UUID = bluetooth.UUID(0x1801)
+_ENV_SENSE_UUID = bluetooth.UUID("a9d6ede1-f904-4419-b4ea-02d9d5af1577")
 # org.bluetooth.characteristic.s64
-_ENV_SENSE_TEMP_UUID = bluetooth.UUID(0x2BDE)
+_ENV_SENSE_TEMP_UUID = bluetooth.UUID("497d8d32-1e96-42b9-8041-d3ee7acc24e0")
 # org.bluetooth.characteristic.gap.appearance.xml
 _ADV_APPEARANCE_GENERIC_THERMOMETER = const(128)
 
