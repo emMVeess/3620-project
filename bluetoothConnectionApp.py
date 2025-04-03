@@ -1,14 +1,14 @@
 import reciever_modular         #Bluetooth functions
-import serial                   #serial library to handle comm with the Pico
-import serial.tools.list_ports  #tool for listing available serial ports
+import serial                   # type: ignore #serial library to handle comm with the Pico
+import serial.tools.list_ports  # type: ignore #tool for listing available serial ports
 import tkinter as tk            # GUI library
 from tkinter import ttk, messagebox, scrolledtext  #more Tkinter widgets for better UI
 import threading    #Allows concurrent execution to read serial data without freezing the GUI
 import time         #used for adding delays during serial read
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
-import numpy as np
+from matplotlib.figure import Figure # type: ignore
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg # type: ignore
+from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk # type: ignore
+import numpy as np # type: ignore
 
 #Global variables
 ser = None
@@ -19,6 +19,7 @@ service_characteristics = [] #available service/characteristic pairs from periph
 service = None #selected service-characteristic pair
 found_addresses = dict() #collection of our addresses stored as a dict
 results = [] #collection of address/name strings to display
+displayed = False #display check
 
 #GUI Setup
 #creates the main app window, sets the window title, and window size
@@ -61,6 +62,12 @@ address_box['state'] = 'readonly'
 address_box.pack(side=tk.LEFT, padx=5, pady=5)
 
 graph_frame = ttk.Frame(main_frame)
+
+fig = Figure(figsize=(10, 10), dpi=100)
+ax = fig.add_subplot()
+ax.set_ylabel("RSSI")
+canvas = FigureCanvasTkAgg(fig, master=graph_frame)  # A tk.DrawingArea.
+canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
 # -------------- SERIAL STUFF ------------------
 # Initialize Serial Connection
@@ -233,6 +240,13 @@ def deconstruct_data(data):
         results.append(f"{address} ({this_address['name']})")
         found_addresses.update({address: this_address})
 
+    if displayed:
+        ax.cla()
+        result = address_box.get()
+        result = result[0:17]
+        ax.plot(found_addresses[result]['rssi'], color='green')
+        canvas.draw()
+    
     address_box['values'] = results
     
 def stop_observing():
@@ -258,16 +272,10 @@ def graph_selected():
 
     
 def make_graph(result):
-    
-    fig = Figure(figsize=(10, 10), dpi=100)
-    ax = fig.add_subplot()
-    ax.set_ylabel = "RSSI"
-    ax.plot(found_addresses[result]['rssi'])
-
-    canvas = FigureCanvasTkAgg(fig, master=graph_frame)  # A tk.DrawingArea.
+    global displayed
+    ax.plot(found_addresses[result]['rssi'], color='green')
     canvas.draw()
-    canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-
+    displayed = True
 
 
 #buttons for GUI

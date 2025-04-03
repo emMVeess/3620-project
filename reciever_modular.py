@@ -1,4 +1,4 @@
-import simplepyble
+import simplepyble # type: ignore
 import time
 
 def get_available_adapters():
