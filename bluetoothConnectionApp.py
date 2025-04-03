@@ -1,11 +1,14 @@
 import reciever_modular         #Bluetooth functions
-import graphing                 #graphing functions for gui
 import serial                   #serial library to handle comm with the Pico
 import serial.tools.list_ports  #tool for listing available serial ports
 import tkinter as tk            # GUI library
 from tkinter import ttk, messagebox, scrolledtext  #more Tkinter widgets for better UI
 import threading    #Allows concurrent execution to read serial data without freezing the GUI
 import time         #used for adding delays during serial read
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
+import numpy as np
 
 #Global variables
 ser = None
@@ -15,12 +18,13 @@ peripheral = None #selected peripheral
 service_characteristics = [] #available service/characteristic pairs from peripheral
 service = None #selected service-characteristic pair
 found_addresses = dict() #collection of our addresses stored as a dict
+results = [] #collection of address/name strings to display
 
 #GUI Setup
 #creates the main app window, sets the window title, and window size
 root = tk.Tk()                      
 root.title("Bluetooth Device Scanner")  
-root.geometry("600x500")  
+root.geometry("800x600")  
 
 #UI Elements
 #Creates frame to hold UI 
@@ -49,6 +53,14 @@ service_boxvar = tk.StringVar()
 service_box = ttk.Combobox(combobox_frame, textvariable=service_boxvar, width=30, height=5)
 service_box['state'] = 'readonly'
 service_box.pack(side=tk.LEFT, padx=5, pady=5)
+
+#found addresses combobox
+address_boxvar = tk.StringVar()
+address_box = ttk.Combobox(combobox_frame, textvariable=address_boxvar, width=30, height=5)
+address_box['state'] = 'readonly'
+address_box.pack(side=tk.LEFT, padx=5, pady=5)
+
+graph_frame = ttk.Frame(main_frame)
 
 # -------------- SERIAL STUFF ------------------
 # Initialize Serial Connection
@@ -174,15 +186,15 @@ def connect_peripheral():
     global peripheral
     global service_characteristics
     peripheral.connect()
+    result = []
     notification_area.insert(tk.END, "Peripheral connected! getting services...\n")
     services = peripheral.services()
     for s in services:
         for c in s.characteristics():
             service_characteristics.append((s.uuid(), c.uuid())) #putting services into a tuple
-    results = []
     for (s, c) in service_characteristics:
-        results.append(f"{s} {c}") #putthing the tuples into a human-readable list, using parallel list to actually control
-    service_box['values'] = results
+        result.append(f"{s} {c}") #putthing the tuples into a human-readable list, using parallel list to actually control
+    service_box['values'] = result
     service_box.current(0)
 
 def set_characteristic():
@@ -205,6 +217,7 @@ def observer():
     
 def deconstruct_data(data):
     global found_addresses
+    global results
     test = data.decode('utf-8').split(',')
     name = test[0]
     address = test[2][1:18]
@@ -217,7 +230,10 @@ def deconstruct_data(data):
         found_addresses[address]["rssi"].append(int(rssi))
     else:
         this_address = {"name": name, "rssi": [int(rssi)]}
+        results.append(f"{address} ({this_address['name']})")
         found_addresses.update({address: this_address})
+
+    address_box['values'] = results
     
 def stop_observing():
     disconnect_thread = threading.Thread(target=disconnect, daemon=True)
@@ -231,8 +247,28 @@ def disconnect():
 def close_app():
     root.destroy()
 
-def graph_selected():  #need to implement
-    pass
+def graph_selected():
+    result = address_box.get()
+    if result == "":
+        messagebox.showwarning("Warning", "No address found.")
+        return
+    result = result[0:17]
+    graph_thread = threading.Thread(target=make_graph(result), daemon=True)
+    graph_thread.start()
+
+    
+def make_graph(result):
+    
+    fig = Figure(figsize=(10, 10), dpi=100)
+    ax = fig.add_subplot()
+    ax.set_ylabel = "RSSI"
+    ax.plot(found_addresses[result]['rssi'])
+
+    canvas = FigureCanvasTkAgg(fig, master=graph_frame)  # A tk.DrawingArea.
+    canvas.draw()
+    canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+
 
 #buttons for GUI
 button_frame = ttk.Frame(main_frame)
@@ -246,11 +282,12 @@ test_button = ttk.Button(button_frame, text="Set Characteristic", command=set_ch
 test_button.pack(side=tk.LEFT, padx=5)
 status_button = ttk.Button(button_frame, text="Start Observing", command=start_observing)
 status_button.pack(side=tk.LEFT, padx=5)
-close_button = ttk.Button(button_frame, text="Stop Observing", command=stop_observing)
+close_button = ttk.Button(button_frame, text="Disconnect from Observer", command=stop_observing)
 close_button.pack(side=tk.LEFT, padx=5)
 graph_button = ttk.Button(button_frame, text="Graph Selected", command=graph_selected)
 graph_button.pack(side=tk.LEFT, padx=5)
 
+graph_frame.pack(pady=5)
 # close the serial connection
 root.protocol("WM_DELETE_WINDOW", close_app)
 root.mainloop()  # Run GUI 
