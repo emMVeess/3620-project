@@ -1,26 +1,10 @@
 import simplepyble
 import time
 
-adapter = ""
-peripheral = ""
-services = ""
-characteristic = ""
-service = ""
-
 def get_available_adapters():
-    adapters = simplepyble.Adapter.get_adapters()
-    if len(adapters) == 0:
-        return False
-    return adapters #returns a list of adapter objects
+    return simplepyble.Adapter.get_adapters() #returns a list of adapter objects
 
-
-def set_adapter(selected_adapter):  # requires an adapter object
-    global adapter
-    adapter = selected_adapter
-    print(f"Selected adapter: {selected_adapter.identifier()} [{selected_adapter.address()}]")
-    
-
-def scan_for_devices():
+def scan_for_devices(adapter):
     adapter.scan_for(5000)
     peripherals = adapter.scan_get_results()
     return peripherals #returns a list of peripheral objects
@@ -44,7 +28,7 @@ def set_service(selected_service_characteristic_pair): #requires a tuple contain
     service, characteristic = selected_service_characteristic_pair
 
 
-def subscribe_to_notifications(timesleep): #reuqires an int to tell the system to sleep for x seconds
+def subscribe_to_notifications(timesleep): #requires an int to tell the system to sleep for x seconds
     global service
     global characteristic
     peripheral.notify(service, characteristic, lambda data: print(f"Notification: {data.decode("utf-8")}"))
