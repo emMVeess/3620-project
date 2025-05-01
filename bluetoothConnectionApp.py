@@ -1,4 +1,4 @@
-import reciever_modular         #Bluetooth functions
+import reciever_modular         # Bluetooth functions # type: ignore
 import serial                   # type: ignore #serial library to handle comm with the Pico
 import serial.tools.list_ports  # type: ignore #tool for listing available serial ports
 import tkinter as tk            # GUI library
@@ -255,7 +255,10 @@ def stop_observing():
 
 def disconnect():
     global peripheral
-    peripheral.disconnect()
+    try:
+        peripheral.disconnect()
+    except RuntimeError:
+        print("Runtime error")
     notification_area.insert(tk.END, f"Disconnected from peripheral.\n")
 
 def close_app():
