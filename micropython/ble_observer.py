@@ -38,7 +38,7 @@ aioble.register_services(temp_service)
 # This would be periodically polling a hardware sensor.
 async def sensor_task():
     while True:
-        async with aioble.scan(duration_ms=500) as scanner:
+        async with aioble.scan(duration_ms=1000) as scanner:
             async for result in scanner:
                 temp_characteristic.write((str(result.name()) + "," + str(result.device) + "," + str(result.rssi)).encode('utf-8'), send_update = True)
                 await asyncio.sleep_ms(10)
