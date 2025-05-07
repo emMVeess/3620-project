@@ -65,7 +65,8 @@ graph_frame = ttk.Frame(main_frame)
 
 fig = Figure(figsize=(10, 10), dpi=100)
 ax = fig.add_subplot()
-ax.set_ylabel("RSSI")
+fig.suptitle("Device's RSSI over Time")
+ax.set_ylabel("RSSI (dpm)")
 canvas = FigureCanvasTkAgg(fig, master=graph_frame)  # A tk.DrawingArea.
 canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
@@ -276,6 +277,7 @@ def graph_selected():
     
 def make_graph(result):
     global displayed
+    ax.set_ylabel("RSSI (dBm)")
     ax.plot(found_addresses[result]['rssi'], color='green')
     canvas.draw()
     displayed = True
