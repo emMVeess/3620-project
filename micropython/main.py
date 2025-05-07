@@ -12,15 +12,15 @@ import bluetooth
 import random
 import struct
 
-# org.bluetooth.service.GATT
+# org.bluetooth.service.unique
 _ENV_SENSE_UUID = bluetooth.UUID("a9d6ede1-f904-4419-b4ea-02d9d5af1577")
-# org.bluetooth.characteristic.64-string
+# org.bluetooth.characteristic.unique
 _ENV_SENSE_TEMP_UUID = bluetooth.UUID("497d8d32-1e96-42b9-8041-d3ee7acc24e0")
 # org.bluetooth.characteristic.gap.appearance.xml
 _ADV_APPEARANCE_GENERIC_THERMOMETER = const(128)
 
 # How frequently to send advertising beacons.
-_ADV_INTERVAL_MS = 250_000
+_ADV_INTERVAL_MS = 5_000
 
 
 # Register GATT server.
@@ -34,8 +34,7 @@ aioble.register_services(temp_service)
 # Helper to encode the temperature characteristic encoding (sint16, hundredths of a degree).
 
 
-
-# This would be periodically polling a hardware sensor.
+#observe all advertising sends for 1 second, update the characteristic for every system found
 async def sensor_task():
     while True:
         async with aioble.scan(duration_ms=1000) as scanner:
