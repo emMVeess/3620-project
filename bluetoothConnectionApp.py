@@ -243,6 +243,7 @@ def deconstruct_data(data):
 
     if displayed:
         ax.cla()
+        ax.set_ylabel("RSSI (dBm)")
         result = address_box.get()
         result = result[0:17]
         ax.plot(found_addresses[result]['rssi'], color='green')
@@ -277,7 +278,6 @@ def graph_selected():
     
 def make_graph(result):
     global displayed
-    ax.set_ylabel("RSSI (dBm)")
     ax.plot(found_addresses[result]['rssi'], color='green')
     canvas.draw()
     displayed = True
